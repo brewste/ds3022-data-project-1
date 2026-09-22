@@ -16,13 +16,10 @@ def load_parquet_files():
         # Connect to local DuckDB instance
         con = duckdb.connect(database='emissions.duckdb', read_only=False)
         logger.info("Connected to DuckDB instance")
+        
 
-        # Make yellow taxi table
 
-
-        # Make green taxi table
-
-        #make vehicle emissions table
+        # VEHICLE EMISSIONS TABLE
         con.execute("""
            DROP TABLE IF EXISTS vehicle_emissions;
             CREATE TABLE vehicle_emissions AS
@@ -34,12 +31,56 @@ def load_parquet_files():
         n = con.execute(
             "SELECT COUNT(*) FROM vehicle_emissions"
             ).fetchone()[0]
-
         logger.info(f"vehicle_emissions: {n} rows loaded")
+        print(f"vehicle_emissions: {n} rows loaded")
 
 
+        
 
-        #Count total rows?
+        # YELLOW TAXI TABLE
+
+        # Create yellow taxi table
+        con.execute("""
+            DROP TABLE IF EXISTS yellow_trips;
+            
+            CREATE TABLE yellow_trips (
+                    VendorID INTEGER,
+                    pickup_time TIMESTAMP,
+                    dropoff_time TIMESTAMP,
+                    passenger_count INTEGER,
+                    trip_distance FLOAT
+            );
+        """)
+        logger.info("Created yellow_trips table")
+       
+        # Load all 12 months of 2024 yellow taxi data using for loop
+        for month in range(1, 13):
+            url = (
+                f"https://d37ci6vzurychx.cloudfront.net/trip-data/"
+                f"yellow_tripdata_2024-{month:02d}.parquet"
+            )
+
+            con.execute(f"""
+                INSERT INTO yellow_trips
+                SELECT 
+                    VendorID,
+                    tpep_pickup_datetime AS pickup_time,
+                    tpep_dropoff_datetime AS dropoff_time,
+                    passenger_count,
+                    trip_distance
+                FROM read_parquet('{url}');
+            """)
+            logger.info(f"Loaded yellow taxi data for month {month:02d}")
+        
+
+        #Get raw count of rows in yellow_trips table
+        n = con.execute(
+            "SELECT COUNT(*) FROM yellow_trips"
+            ).fetchone()[0]
+        logger.info(f"yellow_trips: {n} rows loaded")
+        print(f"yellow_trips: {n} rows loaded")
+
+    
 
 
     except Exception as e:
