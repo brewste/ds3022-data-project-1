@@ -8,7 +8,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
+#---STEP 1: Remove duplicates---
 def remove_duplicates(con, table_name):
     # Count duplicate groups before cleaning
     before_duplicates = con.execute(f"""
@@ -46,6 +46,34 @@ def remove_duplicates(con, table_name):
 
 
 
+# STEP 2: Remove trips with zero passengers
+def remove_zero_passenger_trips(con, table_name):
+    # Count trips with zero passengers before cleaning
+    before_zero_passengers = con.execute(f"""
+        SELECT COUNT(*) 
+        FROM {table_name} 
+        WHERE passenger_count = 0
+    """).fetchone()[0]
+
+    # Remove trips with zero passengers
+    con.execute(f"""
+        DELETE FROM {table_name} 
+        WHERE passenger_count = 0
+    """)
+    logger.info(f"Removed trips with zero passengers from {table_name} table")
+
+    # Verification query: count trips with zero passengers after cleaning
+    after_zero_passengers = con.execute(f"""
+        SELECT COUNT(*) 
+        FROM {table_name} 
+        WHERE passenger_count = 0
+    """).fetchone()[0]
+
+    print(f"{table_name} trips with zero passengers: {before_zero_passengers} before, {after_zero_passengers} after")
+    logger.info(f"{table_name} trips with zero passengers: {before_zero_passengers} before, {after_zero_passengers} after")
+
+
+
 def clean_data():
     con = None
 
@@ -60,7 +88,9 @@ def clean_data():
         remove_duplicates(con, "yellow_trips")
         remove_duplicates(con, "green_trips")
 
-
+        # ----- STEP 2: Remove trips with zero passengers -----
+        remove_zero_passenger_trips(con, "yellow_trips")
+        remove_zero_passenger_trips(con, "green_trips")
    
    
    
@@ -82,24 +112,7 @@ if __name__ == "__main__":
 
 
 
-# # -----Step 2: remove trips with zero passengers
-# before = con.execute("""
-#     SELECT COUNT(*) FROM yellow_trips 
-#     WHERE passenger_count = 0
-# """).fetchone()[0]
-#
-# con.execute("""DELETE FROM yellow_trips WHERE passenger_count = 0""")
-#
-# after = con.execute("""
-#     SELECT COUNT(*) FROM yellow_trips 
-#     WHERE passenger_count = 0
-# """).fetchone()[0]
-#
-# print(f'Before delete: {before} After delete (verify): {after}')
-# # you need to count rows after deletion!! for credit
-#
-#
-#
+
 #
 # #Step 3: remove zero mile trips
 # #similar code but only changing passenger count; canbasically copy and paste
