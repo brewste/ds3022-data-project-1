@@ -8,6 +8,44 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
+def remove_duplicates(con, table_name):
+    # Count duplicate groups before cleaning
+    before_duplicates = con.execute(f"""
+        SELECT COUNT(*)
+        FROM (
+            SELECT *
+            FROM {table_name}
+            GROUP BY ALL
+            HAVING COUNT(*) > 1
+        )
+    """).fetchone()[0]
+
+    # Remove duplicates
+    con.execute(f"""
+        CREATE TABLE {table_name}_clean AS
+        SELECT DISTINCT * FROM {table_name};
+        DROP TABLE {table_name};
+        ALTER TABLE {table_name}_clean RENAME TO {table_name};  
+    """)
+    logger.info(f"Removed duplicates from {table_name} table")
+
+    # Verification query: count duplicate groups after cleaning
+    after_duplicates = con.execute(f"""
+        SELECT COUNT(*)
+        FROM (
+            SELECT *
+            FROM {table_name}
+            GROUP BY ALL
+            HAVING COUNT(*) > 1
+        )
+    """).fetchone()[0]
+
+    print(f"{table_name} duplicate groups: {before_duplicates} before, {after_duplicates} after")
+    logger.info(f"{table_name} duplicate groups: {before_duplicates} before, {after_duplicates} after")
+
+
+
 def clean_data():
     con = None
 
@@ -19,76 +57,8 @@ def clean_data():
         
         # ----- STEP 1: Remove duplicates -----
         
-        #1a. YELLOW 
-        # Count duplicate groups before cleaning
-        before_duplicates = con.execute("""
-            SELECT COUNT(*)
-            FROM (
-                SELECT *
-                FROM yellow_trips
-                GROUP BY ALL
-                HAVING COUNT(*) > 1
-            )
-        """).fetchone()[0]
-
-        # Remove duplicates
-        con.execute("""
-            CREATE TABLE yellow_trips_clean AS
-            SELECT DISTINCT * FROM yellow_trips;
-            DROP TABLE yellow_trips;
-            ALTER TABLE yellow_trips_clean RENAME TO yellow_trips;  
-        """)
-        logger.info("Removed duplicates from yellow_trips table")
-        
-        # Verification query: count duplicate groups after cleaning
-        after_duplicates = con.execute("""
-            SELECT COUNT(*)
-            FROM (
-                SELECT *
-                FROM yellow_trips
-                GROUP BY ALL
-                HAVING COUNT(*) > 1
-            )
-        """).fetchone()[0]
-
-        print(f"Yellow duplicate groups: {before_duplicates} before, {after_duplicates} after")
-        logger.info(f"Yellow duplicate groups: {before_duplicates} before, {after_duplicates} after")
-
-
-        #1b. GREEN 
-        # Count duplicate groups before cleaning
-        before_duplicates = con.execute("""
-            SELECT COUNT(*)
-            FROM (
-                SELECT *
-                FROM green_trips
-                GROUP BY ALL
-                HAVING COUNT(*) > 1
-            )
-        """).fetchone()[0]
-
-        # Remove duplicates
-        con.execute("""
-            CREATE TABLE green_trips_clean AS
-            SELECT DISTINCT * FROM green_trips;
-            DROP TABLE green_trips;
-            ALTER TABLE green_trips_clean RENAME TO green_trips;  
-        """)
-        logger.info("Removed duplicates from green_trips table")
-        
-        # Verification query: count duplicate groups after cleaning
-        after_duplicates = con.execute("""
-            SELECT COUNT(*)
-            FROM (
-                SELECT *
-                FROM green_trips
-                GROUP BY ALL
-                HAVING COUNT(*) > 1
-            )
-        """).fetchone()[0]
-
-        print(f"Green duplicate groups: {before_duplicates} before, {after_duplicates} after")
-        logger.info(f"Green duplicate groups: {before_duplicates} before, {after_duplicates} after")
+        remove_duplicates(con, "yellow_trips")
+        remove_duplicates(con, "green_trips")
 
 
    
