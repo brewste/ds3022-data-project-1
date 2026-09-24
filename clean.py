@@ -9,6 +9,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+
 #----DEFINE FUNCTION: Remove duplicates-----
 def remove_duplicates(con, table_name):
     
@@ -124,7 +125,7 @@ def remove_trips_over_1_day(con, table_name):
     # Count trips before cleaning
     before_over_1_day = con.execute(f"""
         SELECT COUNT(*) FROM {table_name} 
-        WHERE date_diff('second', pickup_time, dropoff_time) > 86400
+        WHERE date_diff('second', pickup_time, dropoff_time) > 86400 
     """).fetchone()[0]
 
     # Execution: Remove trips over 1 day
@@ -144,6 +145,8 @@ def remove_trips_over_1_day(con, table_name):
 
 
 
+
+#---FINAL STEP: Execute functions for both tables-----
 def clean_data():
     con = None
 
@@ -173,34 +176,10 @@ def clean_data():
     except Exception as e:
        print(f"Error during data cleaning: {e}")
        logger.error(f"Error during data cleaning: {e}")
+       raise
 
 
 if __name__ == "__main__":
     clean_data()
 
 
-
-
-
-
-#
-# # Step 5: remove trips over 1 day
-# before_duration = con.execute("""
-#     SELECT COUNT(*) FROM yellow_trips
-#     WHERE date_diff('second', 'pickup_time', 'dropoff_time') > 86400
-# """).fetchone()[0]
-# print(f'Before delete: {before_duration}')
-#
-# con.execute("""DELETE FROM yellow_trips WHERE date_diff('second', 'pickup_time', 'dropoff_time') > 86400""")
-#
-# after_duration = con.execute("""
-#     SELECT COUNT(*) FROM yellow_trips
-#     WHERE date_diff('second', 'pickup_time', 'dropoff_time') > 86400
-# """).fetchone()[0]
-#
-# print(f'Before delete: {before_duration} After delete (verify): {after_duration}')
-#
-#
-#
-#
-# # YOU HAVE TO DO ALL OF THIS FOR GREEN AS WELL!!

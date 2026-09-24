@@ -8,6 +8,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
+#----DEFINE FUNCTION: Load Parquet Files into DuckDB---
 def load_parquet_files():
 
     con = None
@@ -149,6 +151,7 @@ def load_parquet_files():
     except Exception as e:
         print(f"An error occurred: {e}")
         logger.error(f"An error occurred: {e}")
+        raise
 
 if __name__ == "__main__":
     load_parquet_files()

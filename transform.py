@@ -63,6 +63,7 @@ def transform_data(con, table, label):
 
 
 
+
 #---FINAL STEP: Execute functions----
 def transform():
     con = None
@@ -84,6 +85,8 @@ def transform():
 
     except Exception as e:
         logger.error(f"Error during transformation: {e}")
+        print(f"Error during transformation: {e}")
+        raise
 
 
 if __name__ == "__main__":

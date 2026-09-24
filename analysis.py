@@ -21,7 +21,7 @@ MONTH_NAMES = ["","January", "February", "March", "April", "May", "June",
 
 
 
-#--DEFINE REPORT---Report function to print to screen and log to file
+#--DEFINE REPORT---Report function is used in this file because there is more to print and log
 def report (message):
     print(message)  #screen
     logger.info(message) # log
@@ -141,20 +141,29 @@ def monthly_plot(con,filename="co2_by_month_2024.png"):
 
 #----FINAL EXECUTION: Execute analysis functions for both tables-----
 def analysis():
-    con = duckdb.connect("emissions.duckdb", read_only=True)
-
-    #Answering questions 1 through 5 on rubric
-    for label, table in [("YELLOW", "yellow_trips"), ("GREEN", "green_trips")]:
-        largest_trip(con, label, table)
     
-        heaviest_lightest(con, label, table, column = "hour_of_day", description = "Hour of day")
-        heaviest_lightest(con, label, table, column = "day_of_week", description = "Day of week", names=DAY_NAMES) 
-        heaviest_lightest(con, label, table, column = "week_of_year", description = "Week of year")
-        heaviest_lightest(con, label, table, column = "month_of_year", description = "Month of year", names=MONTH_NAMES)
+    con = None
+    try: 
+        #connect to local DuckDB instance
+        con = duckdb.connect("emissions.duckdb", read_only=True)
+        logger.info("Connected to DuckDB instance")
 
-    monthly_plot(con)
-    con.close()
+        #Answering questions 1 through 5 on rubric
+        for label, table in [("YELLOW", "yellow_trips"), ("GREEN", "green_trips")]:
+            largest_trip(con, label, table)
+            heaviest_lightest(con, label, table, column = "hour_of_day", description = "Hour of day")
+            heaviest_lightest(con, label, table, column = "day_of_week", description = "Day of week", names=DAY_NAMES) 
+            heaviest_lightest(con, label, table, column = "week_of_year", description = "Week of year")
+            heaviest_lightest(con, label, table, column = "month_of_year", description = "Month of year", names=MONTH_NAMES)
 
+        #Create the monthly plot for both taxi types
+        monthly_plot(con)
+        
+        con.close()
+    
+    except Exception as e:
+        report(f"Error during analysis: {e}")
+        raise
 
 if __name__ == "__main__":
     analysis()
