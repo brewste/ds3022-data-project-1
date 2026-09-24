@@ -1,5 +1,28 @@
 # DS3022 - Data Project 1 (Fall 2025)
 
+
+## Pipeline Explanation
+
+This project creates an **ETL pipeline for analyzing carbon emissions from 2024 Yellow and Green Taxi trip data** using Python, SQL, and DuckDB. The pipeline loads the original trip and vehicle emissions data, cleans the trip records, creates new variables such as CO2 emissions and average speed, and performs an analysis comparing emissions across different times of the year. 
+
+**Execution: The entire pipeline can be executed through main.py, which runs the load, clean, transform, and analysis stages in order with one command: python main.py.**
+
+* I made this single entry point because it makes it easier to run the project from a clean state. 
+* Error handling and logging are also used throughout the pipeline. Each individual stage maintains its own log, while the pipeline log produced through main.py gives an overall record of the complete run, including each stage's progression and whether the pipeline completed successfully. 
+
+
+
+**Design Approaches:**
+
+* One design approach I found especially useful was defining clearly labeled functions for individual operations and then calling those functions from a final execution function. I could then use a loop to apply the same operations to both the Yellow and Green Taxi tables rather than repeating nearly identical code for each dataset. This helped keep the scripts shorter, more organized, and easier for me to follow.
+* I used this structure especially heavily in clean.py, where I created a separate function for each cleaning operation. Within each function, I included a “before” check, the cleaning operation itself, and an “after” check to validate that the operation worked as intended. The final clean_data() function could then remain  compact by looping through both taxi tables and calling each of these cleaning functions. 
+* I followed a similar approach in the transformation and analysis files by creating reusable functions where the same logic applied to both taxi types. 
+* In analysis.py, I also made an independent design choice for the Co2 by month graph. Rather than using the graphing approach showed in the class example, I used Seaborn because I am more comfortable working with it. I plotted the monthly emissions for both taxi types and used separate y-axes to account for the large difference in scale between Yellow and Green Taxi emissions.
+
+
+
+---
+
 ## Assignment
 
 <img src="https://s3.amazonaws.com/uvasds-systems/images/nyc-taxi-graphic.png" style="align:right;float:right;max-width:50%;">
