@@ -18,12 +18,17 @@ def remove_duplicates(con, table_name):
         (SELECT * FROM {table_name} GROUP BY ALL HAVING COUNT(*) > 1)
     """).fetchone()[0]
 
-    #Execution: remove duplicates by creating a new table with distinct rows
+    #Execution: drop table if exists
+    con.execute(f"DROP TABLE IF EXISTS {table_name}_clean;")
+
+    #Execution: remove duplicates 
     con.execute(f"""
-                CREATE TABLE IF NOT EXISTS {table_name}_clean AS
-                SELECT DISTINCT * FROM {table_name};
-            """)
-    logger.info(f"Created deduplicated table {table_name}_clean")
+        CREATE TABLE {table_name}_clean AS
+        SELECT DISTINCT * FROM {table_name};
+        DROP TABLE {table_name};
+        ALTER TABLE {table_name}_clean RENAME TO {table_name};  
+    """)
+    logger.info(f"Removed duplicates from {table_name} table")
 
     # Verification query- count after cleaning
     after_duplicates = con.execute(f"""
@@ -60,10 +65,11 @@ def remove_zero_passenger_trips(con, table_name):
     logger.info(f"{table_name} trips with zero passengers: {before_zero_passengers} before, {after_zero_passengers} after")
 
 
+
 #----DEFINE FUNCTION: Remove trips with zero miles-----
 def remove_zero_mile_trips(con, table_name):
     
-    # Count trips with zero miles before cleaning
+    # Count before cleaning
     before_zero_miles = con.execute(f"""
         SELECT COUNT(*) FROM {table_name} 
         WHERE trip_distance = 0
@@ -76,13 +82,65 @@ def remove_zero_mile_trips(con, table_name):
     """)
     logger.info(f"Removed trips with zero miles from {table_name} table")
 
-    # Verification query: count trips with zero miles after cleaning
+    # Verification query- count after cleaning
     after_zero_miles = con.execute(f"""
         SELECT COUNT(*) FROM {table_name} 
         WHERE trip_distance = 0
     """).fetchone()[0]
     print(f"{table_name} trips with zero miles: {before_zero_miles} before, {after_zero_miles} after")
     logger.info(f"{table_name} trips with zero miles: {before_zero_miles} before, {after_zero_miles} after")
+
+
+
+#---DEFINE FUNCTION: Remove trips with over 100 miles-----
+def remove_over_100_mile_trips(con, table_name):
+    
+    # Count trips before cleaning
+    before_over_100_miles = con.execute(f"""
+        SELECT COUNT(*) FROM {table_name} 
+        WHERE trip_distance > 100
+    """).fetchone()[0]
+
+    # Execution: Remove trips with over 100 miles
+    con.execute(f"""
+        DELETE FROM {table_name} 
+        WHERE trip_distance > 100
+    """)
+    logger.info(f"Removed trips with over 100 miles from {table_name} table")
+
+    # Verification query- count after cleaning
+    after_over_100_miles = con.execute(f"""
+        SELECT COUNT(*) FROM {table_name} 
+        WHERE trip_distance > 100
+    """).fetchone()[0]
+    print(f"{table_name} trips with over 100 miles: {before_over_100_miles} before, {after_over_100_miles} after")
+    logger.info(f"{table_name} trips with over 100 miles: {before_over_100_miles} before, {after_over_100_miles} after")
+
+
+
+#----DEFINE FUNCTION: Remove trips over 1 day (86400 seconds)-----
+def remove_trips_over_1_day(con, table_name):
+
+    # Count trips before cleaning
+    before_over_1_day = con.execute(f"""
+        SELECT COUNT(*) FROM {table_name} 
+        WHERE date_diff('second', pickup_time, dropoff_time) > 86400
+    """).fetchone()[0]
+
+    # Execution: Remove trips over 1 day
+    con.execute(f"""
+        DELETE FROM {table_name} 
+        WHERE date_diff('second', pickup_time, dropoff_time) > 86400
+    """)
+    logger.info(f"Removed trips over 1 day from {table_name} table")
+
+    # Verification query- count after cleaning
+    after_over_1_day = con.execute(f"""
+        SELECT COUNT(*) FROM {table_name} 
+        WHERE date_diff('second', pickup_time, dropoff_time) > 86400
+    """).fetchone()[0]
+    print(f"{table_name} trips over 1 day: {before_over_1_day} before, {after_over_1_day} after")
+    logger.info(f"{table_name} trips over 1 day: {before_over_1_day} before, {after_over_1_day} after")
 
 
 
@@ -106,16 +164,12 @@ def clean_data():
             remove_zero_mile_trips(con, table)
 
         #---- STEP 4: Remove trips with over 100 miles --- 
-            #remove_over_100_mile_trips(con, table)
-       
-   
-   
-   
-   
-   
+            remove_over_100_mile_trips(con, table)
 
-   
-   
+        #---- STEP 5: Remove trips over 1 day (86400 seconds) ---
+            remove_trips_over_1_day(con, table)
+
+
     except Exception as e:
        print(f"Error during data cleaning: {e}")
        logger.error(f"Error during data cleaning: {e}")
@@ -127,43 +181,8 @@ if __name__ == "__main__":
 
 
 
-#
-# #Step 3: remove zero mile trips
-# #similar code but only changing passenger count; canbasically copy and paste
-#
-# before_miles = con.execute("""
-#     SELECT COUNT(*) FROM yellow_trips
-#     WHERE trip_distance = 0
-# """).fetchone()[0]
-#
-# con.execute("""DELETE FROM yellow_trips WHERE trip_distance = 0""")
-#
-# after_miles = con.execute("""
-#     SELECT COUNT(*) FROM yellow_trips
-#     WHERE trip_distance = 0
-# """).fetchone()[0]
-#
-# print(f'Before delete: {before_miles} After delete (verify): {after_miles}')
-#
-#
-#
-#
-# #Step 4: remove trips over 100 miles 
-# before_miles = con.execute("""
-#     SELECT COUNT(*) FROM yellow_trips
-#     WHERE trip_distance > 100
-# """).fetchone()[0]
-#
-# con.execute("""DELETE FROM yellow_trips WHERE trip_distance > 100""")
-#
-# after_miles = con.execute("""
-#     SELECT COUNT(*) FROM yellow_trips
-#     WHERE trip_distance > 100
-# """).fetchone()[0]
-#
-# print(f'Before delete: {before_miles} After delete (verify): {after_miles}')
-#
-#
+
+
 #
 # # Step 5: remove trips over 1 day
 # before_duration = con.execute("""
